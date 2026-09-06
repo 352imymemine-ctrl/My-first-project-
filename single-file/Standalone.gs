@@ -1,8 +1,9 @@
 // ============================================
 // 設定：この3つを自分の値に書き換える
+// フォルダはURLをそのまま貼ってOK（IDだけでも可）
 // ============================================
-var NY_FOLDER_ID = 'NYフォルダのID';
-var SAVE_FOLDER_ID = '保存先の親フォルダのID';
+var NY_FOLDER = 'NYフォルダのURL';
+var SAVE_FOLDER = '保存先の親フォルダのURL';
 var API_KEY = 'GeminiのAPIキー';
 
 var REVIEW_FOLDER = '要確認';
@@ -11,8 +12,8 @@ var REVIEW_FOLDER = '要確認';
 // メイン処理（定期実行もこの関数を呼ぶ）
 // ============================================
 function runOrganize() {
-  var from = DriveApp.getFolderById(NY_FOLDER_ID);
-  var to = DriveApp.getFolderById(SAVE_FOLDER_ID);
+  var from = openFolder(NY_FOLDER);
+  var to = openFolder(SAVE_FOLDER);
   var existing = getExistingCategories(to);
 
   var files = [];
@@ -62,6 +63,13 @@ function runOrganize() {
 // ============================================
 // Driveの操作
 // ============================================
+
+// DriveのフォルダURLでもID単体でも受け取れるようにする
+function openFolder(urlOrId) {
+  var m = String(urlOrId).match(/[-\w]{25,}/);
+  if (!m) throw new Error('フォルダのURLまたはIDが正しくありません: ' + urlOrId);
+  return DriveApp.getFolderById(m[0]);
+}
 
 // 保存先にすでにあるフォルダ名 = 既存カテゴリ（要確認フォルダは除く）
 function getExistingCategories(parent) {
