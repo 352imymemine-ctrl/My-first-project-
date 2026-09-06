@@ -10,7 +10,7 @@ var CONFIG_KEYS = {
   GEMINI_MODEL: 'GEMINI_MODEL'
 };
 
-var DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
+var DEFAULT_GEMINI_MODEL = 'gemini-3.6-flash';
 
 function getConfig() {
   var props = PropertiesService.getScriptProperties().getProperties();

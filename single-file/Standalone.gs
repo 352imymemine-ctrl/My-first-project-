@@ -8,6 +8,9 @@ var API_KEY = 'GeminiのAPIキー';
 
 var REVIEW_FOLDER = '要確認';
 
+// 使うAIのモデル。提供終了で404が出たら、エラーメッセージが案内する新しい名前にここを書き換える
+var MODEL = 'gemini-3.6-flash';
+
 // ============================================
 // メイン処理（定期実行もこの関数を呼ぶ）
 // ============================================
@@ -134,7 +137,7 @@ function classify(file, existing) {
   };
 
   var res = UrlFetchApp.fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + API_KEY,
+    'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent?key=' + API_KEY,
     { method: 'post', contentType: 'application/json', payload: JSON.stringify(payload), muteHttpExceptions: true }
   );
 
