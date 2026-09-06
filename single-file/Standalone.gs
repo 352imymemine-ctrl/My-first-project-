@@ -20,11 +20,19 @@ function runOrganize() {
 
   var done = [];
   var review = [];
+  var retry = [];
 
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
     try {
       var r = classify(file, existing);
+
+      // API側の一時的な失敗（回数制限など）は、動かさずに次回の実行で再挑戦する
+      if (r.error) {
+        retry.push(file.getName());
+        continue;
+      }
+
       // 既存フォルダと表記ゆれで重複しそうな場合も、勝手に新規作成せず要確認にする
       var duplicateRisk = r.similar && existing.indexOf(r.category) === -1;
 
@@ -47,8 +55,8 @@ function runOrganize() {
   }
 
   removeEmptyFolders(from);
-  Logger.log('仕分け: ' + done.length + '件 / 要確認: ' + review.length + '件');
-  if (done.length > 0 || review.length > 0) sendReport(done, review, to);
+  Logger.log('仕分け: ' + done.length + '件 / 要確認: ' + review.length + '件 / 次回再挑戦: ' + retry.length + '件');
+  if (done.length > 0 || review.length > 0 || retry.length > 0) sendReport(done, review, retry, to);
 }
 
 // ============================================
@@ -124,7 +132,7 @@ function classify(file, existing) {
 
   if (res.getResponseCode() != 200) {
     Logger.log('APIエラー: ' + res.getContentText());
-    return { category: '未分類', confidence: 'low', similar: '' };
+    return { error: true };
   }
 
   var json = JSON.parse(res.getContentText());
@@ -153,7 +161,7 @@ function clean(text) {
 // ============================================
 // 結果をメールで報告
 // ============================================
-function sendReport(done, review, parent) {
+function sendReport(done, review, retry, parent) {
   var body = '■ 自動で仕分けしました（' + done.length + '件）\n';
   body += done.length ? done.join('\n') : '（なし）';
 
@@ -168,6 +176,12 @@ function sendReport(done, review, parent) {
     body += '\nこれらは「' + REVIEW_FOLDER + '」フォルダに入れてあります。\n';
     body += 'Driveで開いて、正しい科目フォルダに移動してください（新しく作ってもOKです）。\n';
     body += parent.getUrl();
+  }
+
+  if (retry.length > 0) {
+    body += '\n\n■ 今回は処理できなかったファイル（' + retry.length + '件）\n';
+    body += retry.join('\n');
+    body += '\n\nAPIの一時的なエラーです。元の場所に残してあるので、次回の自動実行で再挑戦します。';
   }
 
   MailApp.sendEmail(Session.getEffectiveUser().getEmail(), '[資料整理] ' + done.length + '件を仕分け / ' + review.length + '件は要確認', body);
