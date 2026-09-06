@@ -1,6 +1,8 @@
 /**
  * メイン処理: 「未整理」フォルダ内のファイルをAI分類し、
  * カテゴリ別フォルダへ移動する。
+ * GoodNotesの自動バックアップがサブフォルダ構造で書き出す場合に備え、
+ * 「未整理」フォルダ配下は再帰的に探索する。
  */
 
 function runOrganize() {
@@ -9,12 +11,14 @@ function runOrganize() {
 
   var unorganizedFolder = DriveApp.getFolderById(config.unorganizedFolderId);
   var organizedRoot = DriveApp.getFolderById(config.organizedRootFolderId);
-  var files = unorganizedFolder.getFiles();
   var existingCategories = getExistingCategories();
 
+  var files = [];
+  collectFilesRecursively(unorganizedFolder, files);
+
   var processed = 0;
-  while (files.hasNext()) {
-    var file = files.next();
+  for (var i = 0; i < files.length; i++) {
+    var file = files[i];
     try {
       var category = classifyFile(file, existingCategories);
       if (existingCategories.indexOf(category) === -1) {
@@ -32,7 +36,39 @@ function runOrganize() {
     }
   }
 
+  removeEmptySubfolders(unorganizedFolder);
+
   return processed;
+}
+
+/**
+ * folder配下（サブフォルダを含む）の全ファイルをfileListに集める。
+ */
+function collectFilesRecursively(folder, fileList) {
+  var files = folder.getFiles();
+  while (files.hasNext()) {
+    fileList.push(files.next());
+  }
+
+  var subfolders = folder.getFolders();
+  while (subfolders.hasNext()) {
+    collectFilesRecursively(subfolders.next(), fileList);
+  }
+}
+
+/**
+ * folder配下の空になったサブフォルダを削除する（folder自体は残す）。
+ * GoodNotesが自動生成した分類フォルダの抜け殻を掃除するため。
+ */
+function removeEmptySubfolders(folder) {
+  var subfolders = folder.getFolders();
+  while (subfolders.hasNext()) {
+    var subfolder = subfolders.next();
+    removeEmptySubfolders(subfolder);
+    if (!subfolder.getFiles().hasNext() && !subfolder.getFolders().hasNext()) {
+      subfolder.setTrashed(true);
+    }
+  }
 }
 
 function getOrCreateSubfolder(parentFolder, name) {
