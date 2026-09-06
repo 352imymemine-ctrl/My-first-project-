@@ -96,6 +96,15 @@ function collectFiles(folder, list) {
 function moveInto(file, parent, folderName) {
   var found = parent.getFoldersByName(folderName);
   var target = found.hasNext() ? found.next() : parent.createFolder(folderName);
+
+  // 同じノートを書き足して再バックアップした場合、同名ファイルが並ばないよう
+  // 古い版はゴミ箱へ送る（30日間は復元できる）
+  var older = target.getFilesByName(file.getName());
+  while (older.hasNext()) {
+    var old = older.next();
+    if (old.getId() !== file.getId()) old.setTrashed(true);
+  }
+
   file.moveTo(target);
 }
 
