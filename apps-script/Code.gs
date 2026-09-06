@@ -5,6 +5,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('資料整理')
     .addItem('今すぐ実行', 'runOrganizeFromMenu')
+    .addItem('要確認ファイルを仕分けする', 'resolvePendingReviews')
     .addSeparator()
     .addItem('初期設定', 'showSetupDialog')
     .addSeparator()
